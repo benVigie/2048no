@@ -107,7 +107,6 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
   debugPrintGrid();
 
   // While we haven't move each row
-  // while ((startPos >= 0) && (startPos <= 15)) {
   for(i = 0; i < 4; i++) {
       
     pos = startPos;
