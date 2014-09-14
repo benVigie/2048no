@@ -137,9 +137,10 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
   debugPrintGrid();
 
   // While we haven't move each row
-  for(i = 0; i < 4; i++) {
+  for (i = 0; i < 4; i++) {
       
     pos = startPos;
+    _unmergeFrame = -1;
     // For the 3 next frame (the first one is obviously already placed to the limit)
     for (j = 0; j < 3; j++) {
       // Go to the next frame
@@ -161,6 +162,7 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
 
 bool moveFrame(int pos, int nextFrame, int limit) {
   bool hasMoved = false;
+  bool canMerge = true;
 
   while (pos != limit) {
     
@@ -174,10 +176,12 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       _grid[pos] = 0;
       hasMoved = true;
     }
-    else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame])) {
+    else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame]) && (canMerge) && ((pos + nextFrame) != _unmergeFrame)) {
       _grid[pos + nextFrame] = _grid[pos] * 2;
       _grid[pos] = 0;
+      _unmergeFrame = pos + nextFrame;
       hasMoved = true;
+      canMerge = false;
     }
 
     pos += nextFrame;
