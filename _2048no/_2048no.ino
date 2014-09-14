@@ -23,6 +23,9 @@ void setup() {
   
   // Display the grid
   printGrid();
+
+  playMelody(_startMelody, _startMelodyDurations, _startNotes);
+  // playMelody(_gameOverMelody, _gameOverMelodyDurations, _gameOverNotes);
 }
 
 void loop() {
@@ -182,6 +185,7 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       _unmergeFrame = pos + nextFrame;
       hasMoved = true;
       canMerge = false;
+      playMelody(_combinationMelody, _combinationMelodyDurations, _combinationNotes);
     }
 
     pos += nextFrame;
@@ -241,6 +245,21 @@ Direction checkMove() {
     isDefaultPosition = true;
 
   return (currentDirection);
+}
+
+/**
+ * Play a melody given in parameters
+ */
+void playMelody(int* melody, int* duration, int melodySize) {
+  int note, noteDuration, pauseBetweenNotes;
+
+  for (note = 0; note < melodySize; note++) {
+    noteDuration = 1000 / duration[note];
+    pauseBetweenNotes = noteDuration * 1.30;
+    tone(PIEZZO_PIN, melody[note], noteDuration);
+    delay(pauseBetweenNotes);
+    noTone(PIEZZO_PIN);
+  }
 }
 
 void debugPrintGrid() {
