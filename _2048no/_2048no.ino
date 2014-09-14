@@ -87,10 +87,40 @@ uint16_t getColor(int value) {
   
   switch (value) {
     case 2:
-      color = _matrix.Color(255, 0, 0);
+      color = _matrix.Color(237, 255, 209);
       break;
     case 4:
-      color = _matrix.Color(0, 255, 0);
+      color = _matrix.Color(255, 250, 114);
+      break;
+    case 8:
+      color = _matrix.Color(255, 229, 4);
+      break;
+    case 16:
+      color = _matrix.Color(255, 177, 0);
+      break;
+    case 32:
+      color = _matrix.Color(255, 110, 2);
+      break;
+    case 64:
+      color = _matrix.Color(255, 47, 0);
+      break;
+    case 128:
+      color = _matrix.Color(255, 0, 96);
+      break;
+    case 256:
+      color = _matrix.Color(206, 3, 255);
+      break;
+    case 512:
+      color = _matrix.Color(85, 26, 255);
+      break;
+    case 1024:
+      color = _matrix.Color(0, 136, 255);
+      break;
+    case 2048:
+      color = _matrix.Color(0, 246, 255);
+      break;
+    case 4096:
+      color = _matrix.Color(0, 255, 115);
       break;
     default:
       color = _matrix.Color(0, 0, 0);
@@ -107,9 +137,10 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
   debugPrintGrid();
 
   // While we haven't move each row
-  for(i = 0; i < 4; i++) {
+  for (i = 0; i < 4; i++) {
       
     pos = startPos;
+    _unmergeFrame = -1;
     // For the 3 next frame (the first one is obviously already placed to the limit)
     for (j = 0; j < 3; j++) {
       // Go to the next frame
@@ -131,6 +162,7 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
 
 bool moveFrame(int pos, int nextFrame, int limit) {
   bool hasMoved = false;
+  bool canMerge = true;
 
   while (pos != limit) {
     
@@ -143,6 +175,13 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       _grid[pos + nextFrame] = _grid[pos];
       _grid[pos] = 0;
       hasMoved = true;
+    }
+    else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame]) && (canMerge) && ((pos + nextFrame) != _unmergeFrame)) {
+      _grid[pos + nextFrame] = _grid[pos] * 2;
+      _grid[pos] = 0;
+      _unmergeFrame = pos + nextFrame;
+      hasMoved = true;
+      canMerge = false;
     }
 
     pos += nextFrame;
