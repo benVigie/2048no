@@ -250,7 +250,7 @@ Direction checkMove() {
 /**
  * Play a melody given in parameters
  */
-void playMelody(int* melody, int* duration, int melodySize) {
+void playMelody(const int* melody, const int* duration, const int melodySize) {
   int note, noteDuration, pauseBetweenNotes;
 
   for (note = 0; note < melodySize; note++) {
