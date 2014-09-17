@@ -17,6 +17,10 @@ void setup() {
   // Insert 2 number to start the game
   insertNumber();
   insertNumber();
+  // _grid[0] = 1024;
+  // _grid[4] = 1024;
+  // _grid[8] = 1024;
+  // _grid[12] = 2048;
   
   // Debug
   Serial.begin(9600);
@@ -156,6 +160,10 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
   if (isGridMoved)
     insertNumber();
 
+  if (checkGameOver()) {
+    Serial.println("Gaaaaaaame over !");
+  }
+
   Serial.println("Move done dude !");
   debugPrintGrid();
 }
@@ -169,12 +177,13 @@ bool moveFrame(int pos, int nextFrame, int limit) {
     Serial.print("Try to move frame ");
     Serial.print(pos);
     Serial.print(" to ");
-    Serial.println(pos + nextFrame);
+    Serial.print(pos + nextFrame);
 
     if ((_grid[pos] != 0) && (_grid[pos + nextFrame] == 0)) {
       _grid[pos + nextFrame] = _grid[pos];
       _grid[pos] = 0;
       hasMoved = true;
+      Serial.println(": move to empty frame");
     }
     else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame]) && (canMerge) && ((pos + nextFrame) != _unmergeFrame)) {
       _grid[pos + nextFrame] = _grid[pos] * 2;
@@ -182,6 +191,11 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       _unmergeFrame = pos + nextFrame;
       hasMoved = true;
       canMerge = false;
+      Serial.println(": merge frames");
+    }
+    else {
+      Serial.println(": can't move");
+      break;
     }
 
     pos += nextFrame;
@@ -241,6 +255,41 @@ Direction checkMove() {
     isDefaultPosition = true;
 
   return (currentDirection);
+}
+
+bool checkGameOver() {
+  int   i = 0;
+
+  // Check for each frame if a merge is possible (or if the frame is empty...)
+  while (i < 16) {
+    // If there still have empty frames exit
+    if (_grid[i] == 0)
+      break;
+
+    if ((i % 4) != 0) { // Check if we can combine with the left frame
+      if (_grid[i] == _grid[i - 1])
+        break;
+    }
+    if (((i + 1) % 4) != 0) { // Check if we can combine with the right frame
+      if (_grid[i] == _grid[i + 1])
+        break;
+    }
+    if (i > 3) { // Check if we can combine with the upper frame
+      if (_grid[i] == _grid[i - 4])
+        break;
+    }
+    if (i < 12) { // Check if we can combine with the bottom frame
+      if (_grid[i] == _grid[i + 4])
+        break;
+    }
+
+    i++;
+  }
+
+  // If we ran out of frame without any available merge, game over !
+  if (i >= 16)
+    return (true);
+  return (false);
 }
 
 void debugPrintGrid() {

@@ -16,6 +16,7 @@ Adafruit_NeoMatrix _matrix = Adafruit_NeoMatrix(8, 8, MATRIC_PIN,
 
 // Game grid, a 4x4 square
 int _grid[16];
+
 // Usefull to tag a frame which can't be merge
 int _unmergeFrame;
 
