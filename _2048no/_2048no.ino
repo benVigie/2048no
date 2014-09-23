@@ -57,23 +57,20 @@ void loop() {
 *  This function display all grid frame according to their color
 */
 void printGrid() {
-  uint16_t* color;
   int line, col;
   
   _matrix.fillScreen(0);
   
   for (int i = 0; i < 16; i++) {
-    color = getColor(_grid[i]);
+    getColor(_grid[i]);
     line = i / 4;
     col = i % 4;
     
-    _matrix.drawPixel(col * 2, line * 2, color[0]);
-    _matrix.drawPixel(col * 2 + 1, line * 2, (color[1] != 0) ? color[1] : color[0]);
-    _matrix.drawPixel(col * 2, line * 2 + 1, (color[2] != 0) ? color[2] : color[0]);
-    _matrix.drawPixel(col * 2 + 1, line * 2 + 1, (color[3] != 0) ? color[3] : color[0]);
+    _matrix.drawPixel(col * 2, line * 2, _color[0]);
+    _matrix.drawPixel(col * 2 + 1, line * 2, (_color[1] != 0) ? _color[1] : _color[0]);
+    _matrix.drawPixel(col * 2, line * 2 + 1, (_color[2] != 0) ? _color[2] : _color[0]);
+    _matrix.drawPixel(col * 2 + 1, line * 2 + 1, (_color[3] != 0) ? _color[3] : _color[0]);
   }
-
-  free(color);
   
   _matrix.show();
 }
@@ -81,84 +78,69 @@ void printGrid() {
 /**
 *  Return a frame color according to its value
 */
-uint16_t* getColor(int value) {
-  uint16_t* color;// = { 0, 0, 0, 0 };
-
-  color = (uint16_t*)malloc(sizeof(color) * 4);
-  memset(color, 0, sizeof(color) * 4);
+void getColor(int value) {
+  // Reset previous color
+  // memset(_color, 0, sizeof(_color) * 4);
+  _color[0] = 0;
+  _color[1] = 0;
+  _color[2] = 0;
+  _color[3] = 0;
 
   switch (value) {
     case 2:
-      color[0] = _matrix.Color(237, 255, 209);
+      _color[0] = _matrix.Color(237, 255, 209);
       break;
     case 4:
-      color[0] = _matrix.Color(255, 250, 114);
+      _color[0] = _matrix.Color(255, 250, 114);
       break;
     case 8:
-      color[0] = _matrix.Color(255, 160, 0);
+      _color[0] = _matrix.Color(255, 160, 0);
       break;
     case 16:
-      color[0] = _matrix.Color(255, 47, 0);
+      _color[0] = _matrix.Color(255, 47, 0);
       break;
     case 32:
-      color[0] = _matrix.Color(255, 0, 96);
+      _color[0] = _matrix.Color(255, 0, 96);
       break;
     case 64:
-      color[0] = _matrix.Color(206, 3, 255);
+      _color[0] = _matrix.Color(206, 3, 255);
       break;
     case 128:
-      color[0] = _matrix.Color(0, 136, 255);
+      _color[0] = _matrix.Color(0, 136, 255);
       break;
     case 256:
-      color[0] = _matrix.Color(0, 246, 255);
+      _color[0] = _matrix.Color(0, 246, 255);
       break;
     case 512:
-      color[0] = _matrix.Color(0, 255, 20);
+      _color[0] = _matrix.Color(0, 255, 20);
       break;
     case 1024:
-      color[0] = _matrix.Color(0, 255, 115);
+      _color[0] = _matrix.Color(0, 255, 115);
       break;
     case 2048:
-      color[0] = _matrix.Color(255, 160, 0);
-      color[1] = _matrix.Color(255, 0, 96);
-      color[2] = _matrix.Color(206, 3, 255);
-      color[3] = _matrix.Color(255, 47, 0);
+      _color[0] = _matrix.Color(255, 160, 0);
+      _color[1] = _matrix.Color(255, 0, 96);
+      _color[2] = _matrix.Color(206, 3, 255);
+      _color[3] = _matrix.Color(255, 47, 0);
       break;
     case 4096:
-      color[0] = _matrix.Color(0, 136, 255);
-      color[1] = _matrix.Color(0, 255, 20);
-      color[2] = _matrix.Color(0, 255, 115);
-      color[3] = _matrix.Color(0, 246, 255);
+      _color[0] = _matrix.Color(0, 136, 255);
+      _color[1] = _matrix.Color(0, 255, 20);
+      _color[2] = _matrix.Color(0, 255, 115);
+      _color[3] = _matrix.Color(0, 246, 255);
       break;
     default:
-      color[0] = _matrix.Color(0, 0, 0);
+      _color[0] = _matrix.Color(0, 0, 0);
   }
-  
-  return (color);
 }
 
 void startNewGame() {
   // Initialyze grid
   memset(_grid, 0, sizeof(_grid[0]) * 16);
-
-  _grid[0] = 0;
-  _grid[1] = 2;
-  _grid[2] = 4;
-  _grid[3] = 8;
-  _grid[7] = 16;
-  _grid[11] = 32;
-  _grid[15] = 64;
-  _grid[14] = 128;
-  _grid[13] = 256;
-  _grid[12] = 512;
-  _grid[8] = 1024;
-  _grid[4] = 2048;
-  _grid[5] = 4096;
-  
   
   // Insert 2 number to start the game
-  // insertNumber();
-  // insertNumber();
+  insertNumber();
+  insertNumber();
   
   // Display the grid
   printGrid();
@@ -304,9 +286,9 @@ Direction checkMove() {
       else if (vertical == 4)
         currentDirection = Down;
       else if (horizontal == 0)
-        currentDirection = Right;
-      else
         currentDirection = Left;
+      else
+        currentDirection = Right;
     }
   }
   // Else check if the joystick is back to its default position
