@@ -12,7 +12,7 @@ const int PIEZZO_PIN   = 8;
 // Instanciate the Led Matrix
 // See https://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
 Adafruit_NeoMatrix _matrix = Adafruit_NeoMatrix(8, 8, MATRIC_PIN,
-  NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
+  NEO_MATRIX_TOP     + NEO_MATRIX_RIGHT +
   NEO_MATRIX_COLUMNS + NEO_MATRIX_PROGRESSIVE,
   NEO_GRB            + NEO_KHZ800);
 
@@ -24,6 +24,8 @@ int _unmergeFrame;
 
 // Boolean use by the joystick
 bool  isDefaultPosition = true;
+
+int _score;
 
 
 enum Direction {

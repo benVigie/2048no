@@ -8,27 +8,18 @@
 void setup() {
   // Initialyze matrix
   _matrix.begin();
+  _matrix.setTextWrap(false);
   _matrix.setBrightness(20);
+  _matrix.setTextColor( _matrix.Color(0, 255, 115) );
   
-  // Initialyze grid and random
-  memset(_grid, 0, 16);
+  // Initialyze random
   randomSeed(analogRead(0));
-  
-  // Insert 2 number to start the game
-  insertNumber();
-  insertNumber();
-  // _grid[0] = 1024;
-  // _grid[4] = 1024;
-  // _grid[8] = 1024;
-  // _grid[12] = 2048;
   
   // Debug
   Serial.begin(9600);
-  
-  // Display the grid
-  printGrid();
 
-  playMelody(_startMelody, _startMelodyDurations, _startNotes);
+  // Start the game
+  startNewGame();
 }
 
 void loop() {
@@ -66,21 +57,23 @@ void loop() {
 *  This function display all grid frame according to their color
 */
 void printGrid() {
-  uint16_t color;
+  uint16_t* color;
   int line, col;
   
   _matrix.fillScreen(0);
   
-  for (int i = 0; i < 16; i++){
+  for (int i = 0; i < 16; i++) {
     color = getColor(_grid[i]);
     line = i / 4;
     col = i % 4;
     
-    _matrix.drawPixel(col * 2, line * 2, color);
-    _matrix.drawPixel(col * 2 + 1, line * 2, color);
-    _matrix.drawPixel(col * 2, line * 2 + 1, color);
-    _matrix.drawPixel(col * 2 + 1, line * 2 + 1, color);
+    _matrix.drawPixel(col * 2, line * 2, color[0]);
+    _matrix.drawPixel(col * 2 + 1, line * 2, (color[1] != 0) ? color[1] : color[0]);
+    _matrix.drawPixel(col * 2, line * 2 + 1, (color[2] != 0) ? color[2] : color[0]);
+    _matrix.drawPixel(col * 2 + 1, line * 2 + 1, (color[3] != 0) ? color[3] : color[0]);
   }
+
+  free(color);
   
   _matrix.show();
 }
@@ -88,53 +81,116 @@ void printGrid() {
 /**
 *  Return a frame color according to its value
 */
-uint16_t getColor(int value) {
-  uint16_t color;
-  
+uint16_t* getColor(int value) {
+  uint16_t* color;// = { 0, 0, 0, 0 };
+
+  color = (uint16_t*)malloc(sizeof(color) * 4);
+  memset(color, 0, sizeof(color) * 4);
+
   switch (value) {
     case 2:
-      color = _matrix.Color(237, 255, 209);
+      color[0] = _matrix.Color(237, 255, 209);
       break;
     case 4:
-      color = _matrix.Color(255, 250, 114);
+      color[0] = _matrix.Color(255, 250, 114);
       break;
     case 8:
-      color = _matrix.Color(255, 229, 4);
+      color[0] = _matrix.Color(255, 160, 0);
       break;
     case 16:
-      color = _matrix.Color(255, 177, 0);
+      color[0] = _matrix.Color(255, 47, 0);
       break;
     case 32:
-      color = _matrix.Color(255, 110, 2);
+      color[0] = _matrix.Color(255, 0, 96);
       break;
     case 64:
-      color = _matrix.Color(255, 47, 0);
+      color[0] = _matrix.Color(206, 3, 255);
       break;
     case 128:
-      color = _matrix.Color(255, 0, 96);
+      color[0] = _matrix.Color(0, 136, 255);
       break;
     case 256:
-      color = _matrix.Color(206, 3, 255);
+      color[0] = _matrix.Color(0, 246, 255);
       break;
     case 512:
-      color = _matrix.Color(85, 26, 255);
+      color[0] = _matrix.Color(0, 255, 20);
       break;
     case 1024:
-      color = _matrix.Color(0, 136, 255);
+      color[0] = _matrix.Color(0, 255, 115);
       break;
     case 2048:
-      color = _matrix.Color(0, 246, 255);
+      color[0] = _matrix.Color(255, 160, 0);
+      color[1] = _matrix.Color(255, 0, 96);
+      color[2] = _matrix.Color(206, 3, 255);
+      color[3] = _matrix.Color(255, 47, 0);
       break;
     case 4096:
-      color = _matrix.Color(0, 255, 115);
+      color[0] = _matrix.Color(0, 136, 255);
+      color[1] = _matrix.Color(0, 255, 20);
+      color[2] = _matrix.Color(0, 255, 115);
+      color[3] = _matrix.Color(0, 246, 255);
       break;
     default:
-      color = _matrix.Color(0, 0, 0);
+      color[0] = _matrix.Color(0, 0, 0);
   }
   
   return (color);
 }
 
+void startNewGame() {
+  // Initialyze grid
+  memset(_grid, 0, sizeof(_grid[0]) * 16);
+
+  _grid[0] = 0;
+  _grid[1] = 2;
+  _grid[2] = 4;
+  _grid[3] = 8;
+  _grid[7] = 16;
+  _grid[11] = 32;
+  _grid[15] = 64;
+  _grid[14] = 128;
+  _grid[13] = 256;
+  _grid[12] = 512;
+  _grid[8] = 1024;
+  _grid[4] = 2048;
+  _grid[5] = 4096;
+  
+  
+  // Insert 2 number to start the game
+  // insertNumber();
+  // insertNumber();
+  
+  // Display the grid
+  printGrid();
+
+  _score = 0;
+  playMelody(_startMelody, _startMelodyDurations, _startNotes);
+}
+
+void gameOver() {
+  String goText = "Game Over! ";
+  String goScore = String(_score);
+  int x = _matrix.width();
+  int strLen;
+  
+  Serial.println("Gaaaaaaame over !");
+  playMelody(_gameOverMelody, _gameOverMelodyDurations, _gameOverNotes);
+  
+  // Display game over message and score
+  goText += goScore;
+  strLen = goText.length() * 6;
+  while (x > -strLen) {
+    _matrix.fillScreen(0);
+    _matrix.setCursor(x, 0);
+    _matrix.print( goText );
+    _matrix.show();
+    delay(100);
+    x--;
+  }
+
+  // Be prepare for the next game ! :)
+  startNewGame();
+}
 
 void moveGridTo(int startPos, int nextRow, int nextFrame) {
   int pos, i, j;
@@ -162,10 +218,8 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
   if (isGridMoved)
     insertNumber();
 
-  if (checkGameOver()) {
-    Serial.println("Gaaaaaaame over !");
-    playMelody(_gameOverMelody, _gameOverMelodyDurations, _gameOverNotes);
-  }
+  if (checkGameOver())
+    gameOver();
 
   Serial.println("Move done dude !");
   debugPrintGrid();
@@ -191,6 +245,7 @@ bool moveFrame(int pos, int nextFrame, int limit) {
     else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame]) && (canMerge) && ((pos + nextFrame) != _unmergeFrame)) {
       _grid[pos + nextFrame] = _grid[pos] * 2;
       _grid[pos] = 0;
+      _score += _grid[pos + nextFrame];
       _unmergeFrame = pos + nextFrame;
       hasMoved = true;
       canMerge = false;
