@@ -80,12 +80,8 @@ void printGrid() {
 */
 void getColor(int value) {
   // Reset previous color
-  // memset(_color, 0, sizeof(_color) * 4);
-  _color[0] = 0;
-  _color[1] = 0;
-  _color[2] = 0;
-  _color[3] = 0;
-
+  memset(_color, 0, sizeof(*_color) * 4);
+  
   switch (value) {
     case 2:
       _color[0] = _matrix.Color(237, 255, 209);
