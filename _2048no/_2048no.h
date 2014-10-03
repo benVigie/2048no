@@ -2,16 +2,26 @@
 #define __2048NO__
 
 // NeoMatrix control pin
-const int MATRIC_PIN  = 6;
-// Pin for joystick, test purpose only - To be remove when we will use gyroscop 
-const int VERT_PIN    = 5;
-const int HORIZ_PIN   = 4;
+const int MATRIX_PIN  = 6;
+
+// Pin for gyroscope movement detection 
+const int GYRO_X   = 3;
+const int GYRO_Y   = 4;
+
+// Detection gap and error margin. Feel free to change these values according your gyroscope precision
+const int GYRO_DETECTION_GAP  = 60;
+const int MARGIN_DETECTION    = 10;
+
+// Use to retrieve initial gyroscope position
+int GYRO_CALIBRATION_X;
+int GYRO_CALIBRATION_Y;
+
 // Piezzo buzzer pin
 const int PIEZZO_PIN   = 8;
 
 // Instanciate the Led Matrix
 // See https://learn.adafruit.com/adafruit-neopixel-uberguide/neomatrix-library
-Adafruit_NeoMatrix _matrix = Adafruit_NeoMatrix(8, 8, MATRIC_PIN,
+Adafruit_NeoMatrix _matrix = Adafruit_NeoMatrix(8, 8, MATRIX_PIN,
   NEO_MATRIX_TOP     + NEO_MATRIX_RIGHT +
   NEO_MATRIX_COLUMNS + NEO_MATRIX_PROGRESSIVE,
   NEO_GRB            + NEO_KHZ800);
@@ -25,11 +35,12 @@ uint16_t _color[] = { 0, 0, 0, 0 };
 int _unmergeFrame;
 
 // Boolean use by the joystick
-bool  isDefaultPosition = true;
+bool  _isDefaultPosition = true;
 
+// Obisously, the player's score
 int _score;
 
-
+// Enum used to describe available moves
 enum Direction {
   NoDirection,
   Up,
