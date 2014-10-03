@@ -9,14 +9,15 @@ void setup() {
   // Initialyze matrix
   _matrix.begin();
   _matrix.setTextWrap(false);
-  _matrix.setBrightness(20);
+  _matrix.setBrightness(40);
   _matrix.setTextColor( _matrix.Color(0, 255, 115) );
   
   // Initialyze random
   randomSeed(analogRead(0));
-  
-  // Debug
-  Serial.begin(9600);
+
+  // Calibration
+  GYRO_CALIBRATION_X = analogRead(GYRO_X);
+  GYRO_CALIBRATION_Y = analogRead(GYRO_Y);
 
   // Start the game
   startNewGame();
@@ -26,30 +27,25 @@ void loop() {
   Direction direction;
 
   // Get the player direction
-  direction = checkMove();
+  direction = checkGyroMove();
   switch (direction) {
     case Up:
-      Serial.println("Go to: Up");
       moveGridTo(0, 1, 4);
       printGrid();
       break;
     case Right:
-      Serial.println("Go to: Right");
       moveGridTo(3, 4, -1);
       printGrid();
       break;
     case Down:
-      Serial.println("Go to: Down");
       moveGridTo(12, 1, -4);
       printGrid();
       break;
     case Left:
-      Serial.println("Go to: Left");
       moveGridTo(0, 4, 1);
       printGrid();
       break;
-    default:
-      ;
+    default: ;
   }
 }
 
@@ -66,6 +62,7 @@ void printGrid() {
     line = i / 4;
     col = i % 4;
     
+    // For a 16x16 matrix, we need to set 4 led per frame
     _matrix.drawPixel(col * 2, line * 2, _color[0]);
     _matrix.drawPixel(col * 2 + 1, line * 2, (_color[1] != 0) ? _color[1] : _color[0]);
     _matrix.drawPixel(col * 2, line * 2 + 1, (_color[2] != 0) ? _color[2] : _color[0]);
@@ -80,12 +77,8 @@ void printGrid() {
 */
 void getColor(int value) {
   // Reset previous color
-  // memset(_color, 0, sizeof(_color) * 4);
-  _color[0] = 0;
-  _color[1] = 0;
-  _color[2] = 0;
-  _color[3] = 0;
-
+  memset(_color, 0, sizeof(*_color) * 4);
+  
   switch (value) {
     case 2:
       _color[0] = _matrix.Color(237, 255, 209);
@@ -134,6 +127,9 @@ void getColor(int value) {
   }
 }
 
+/**
+ * Initialyze and reset everything to prepare a new game
+ */
 void startNewGame() {
   // Initialyze grid
   memset(_grid, 0, sizeof(_grid[0]) * 16);
@@ -149,13 +145,15 @@ void startNewGame() {
   playMelody(_startMelody, _startMelodyDurations, _startNotes);
 }
 
+/**
+ * Function call on game over
+ */
 void gameOver() {
   String goText = "Game Over! ";
   String goScore = String(_score);
   int x = _matrix.width();
   int strLen;
   
-  Serial.println("Gaaaaaaame over !");
   playMelody(_gameOverMelody, _gameOverMelodyDurations, _gameOverNotes);
   
   // Display game over message and score
@@ -177,8 +175,6 @@ void gameOver() {
 void moveGridTo(int startPos, int nextRow, int nextFrame) {
   int pos, i, j;
   bool isGridMoved = false;
-
-  debugPrintGrid();
 
   // While we haven't move each row
   for (i = 0; i < 4; i++) {
@@ -202,27 +198,22 @@ void moveGridTo(int startPos, int nextRow, int nextFrame) {
 
   if (checkGameOver())
     gameOver();
-
-  Serial.println("Move done dude !");
-  debugPrintGrid();
 }
 
+/**
+ * Move a frame according to the nextFrame direction.
+ * Retur True if the frame has moved, either false
+ */
 bool moveFrame(int pos, int nextFrame, int limit) {
   bool hasMoved = false;
   bool canMerge = true;
 
   while (pos != limit) {
     
-    Serial.print("Try to move frame ");
-    Serial.print(pos);
-    Serial.print(" to ");
-    Serial.print(pos + nextFrame);
-
     if ((_grid[pos] != 0) && (_grid[pos + nextFrame] == 0)) {
       _grid[pos + nextFrame] = _grid[pos];
       _grid[pos] = 0;
       hasMoved = true;
-      Serial.println(": move to empty frame");
     }
     else if ((_grid[pos] != 0) && (_grid[pos] == _grid[pos + nextFrame]) && (canMerge) && ((pos + nextFrame) != _unmergeFrame)) {
       _grid[pos + nextFrame] = _grid[pos] * 2;
@@ -232,16 +223,13 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       hasMoved = true;
       canMerge = false;
       playMelody(_combinationMelody, _combinationMelodyDurations, _combinationNotes);
-      Serial.println(": merge frames");
     }
     else {
-      Serial.println(": can't move");
       break;
     }
 
     pos += nextFrame;
   }
-  Serial.println("");
 
   return (hasMoved);
 }
@@ -266,38 +254,52 @@ void insertNumber() {
     _grid[index] = 4;
 }
 
+
 /**
- *  Return the joystick position, one of Direction enum
+ *  Return the gyroscopic direction (if any), one of Direction enum
  */
-Direction checkMove() {
-  int       vertical, horizontal;
-  Direction currentDirection      = NoDirection;
+Direction checkGyroMove() {
+  int       vertical, horizontal, diffX, diffY;
+  Direction currentDirection  = NoDirection;
 
   // Move detection
-  vertical = map(analogRead(VERT_PIN), 0, 1023, 0, 5);
-  horizontal = map(analogRead(HORIZ_PIN), 0, 1023, 0, 5);
+  horizontal = analogRead(GYRO_X);
+  vertical = analogRead(GYRO_Y);
+
+  // Calc the gap between the initial neutral position and the current inclination
+  diffX = GYRO_CALIBRATION_X - horizontal;
+  diffY = GYRO_CALIBRATION_Y - vertical;
 
   // Check if the joystick is bent to a direction
-  if (isDefaultPosition) {
-    if ((vertical == 0) || (vertical == 4) || (horizontal == 0) || (horizontal == 4)) {
-      isDefaultPosition = false;
-      if (vertical == 0)
-        currentDirection = Up;
-      else if (vertical == 4)
+  if (_isDefaultPosition) {
+    if ( (abs(diffX) > GYRO_DETECTION_GAP) || (abs(diffY) > GYRO_DETECTION_GAP) ) {
+      _isDefaultPosition = false;
+      if ( (abs(diffY) > GYRO_DETECTION_GAP) && (diffY < 0) )
         currentDirection = Down;
-      else if (horizontal == 0)
+      else if ( (abs(diffY) > GYRO_DETECTION_GAP) && (diffY > 0) )
+        currentDirection = Up;
+      else if (diffX < 0)
         currentDirection = Left;
       else
         currentDirection = Right;
     }
   }
   // Else check if the joystick is back to its default position
-  else if ((!isDefaultPosition) && (vertical == 2) && (horizontal == 2))
-    isDefaultPosition = true;
+  else if (!_isDefaultPosition) {
+    horizontal = abs(horizontal - GYRO_CALIBRATION_X);
+    vertical = abs(vertical - GYRO_CALIBRATION_Y);
+
+    if ((vertical < MARGIN_DETECTION) && (horizontal < MARGIN_DETECTION)) {
+      _isDefaultPosition = true;
+    }
+  }
 
   return (currentDirection);
 }
 
+/**
+ * If no more move is possible, return true. 
+ */
 bool checkGameOver() {
   int   i = 0;
 
@@ -345,21 +347,5 @@ void playMelody(const int* melody, const int* duration, const int melodySize) {
     tone(PIEZZO_PIN, melody[note], noteDuration);
     delay(pauseBetweenNotes);
     noTone(PIEZZO_PIN);
-  }
-}
-
-void debugPrintGrid() {
-  int i = 0;
-
-  while (i < 16) {
-    if (i % 4 == 0)
-      Serial.print("[");
-    
-    Serial.print(_grid[i++]);
-
-    if (i % 4 == 0)
-      Serial.println("]");
-    else
-      Serial.print(", ");
   }
 }
