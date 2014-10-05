@@ -71,5 +71,4 @@ const int _gameOverMelody[] = { NOTE_G6, NOTE_F6, NOTE_C1 };
 const int _gameOverMelodyDurations[] = { 8, 8, 2 };
 const int _gameOverNotes = 3;
 
-
 #endif
