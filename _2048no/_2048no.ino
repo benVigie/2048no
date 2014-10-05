@@ -50,84 +50,6 @@ void loop() {
 }
 
 /**
-*  This function display all grid frame according to their color
-*/
-void printGrid() {
-  int line, col;
-  
-  _matrix.fillScreen(0);
-  
-  for (int i = 0; i < 16; i++) {
-    getColor(_grid[i]);
-    line = i / 4;
-    col = i % 4;
-    
-    // For a 16x16 matrix, we need to set 4 led per frame
-    _matrix.drawPixel(col * 2, line * 2, _color[0]);
-    _matrix.drawPixel(col * 2 + 1, line * 2, (_color[1] != 0) ? _color[1] : _color[0]);
-    _matrix.drawPixel(col * 2, line * 2 + 1, (_color[2] != 0) ? _color[2] : _color[0]);
-    _matrix.drawPixel(col * 2 + 1, line * 2 + 1, (_color[3] != 0) ? _color[3] : _color[0]);
-  }
-  
-  _matrix.show();
-}
-
-/**
-*  Return a frame color according to its value
-*/
-void getColor(int value) {
-  // Reset previous color
-  memset(_color, 0, sizeof(*_color) * 4);
-  
-  switch (value) {
-    case 2:
-      _color[0] = _matrix.Color(237, 255, 209);
-      break;
-    case 4:
-      _color[0] = _matrix.Color(255, 250, 114);
-      break;
-    case 8:
-      _color[0] = _matrix.Color(255, 160, 0);
-      break;
-    case 16:
-      _color[0] = _matrix.Color(255, 47, 0);
-      break;
-    case 32:
-      _color[0] = _matrix.Color(255, 0, 96);
-      break;
-    case 64:
-      _color[0] = _matrix.Color(206, 3, 255);
-      break;
-    case 128:
-      _color[0] = _matrix.Color(0, 136, 255);
-      break;
-    case 256:
-      _color[0] = _matrix.Color(0, 246, 255);
-      break;
-    case 512:
-      _color[0] = _matrix.Color(0, 255, 20);
-      break;
-    case 1024:
-      _color[0] = _matrix.Color(0, 255, 115);
-      break;
-    case 2048:
-      _color[0] = _matrix.Color(255, 160, 0);
-      _color[1] = _matrix.Color(255, 0, 96);
-      _color[2] = _matrix.Color(206, 3, 255);
-      _color[3] = _matrix.Color(255, 47, 0);
-      break;
-    case 4096:
-      _color[0] = _matrix.Color(0, 136, 255);
-      _color[1] = _matrix.Color(0, 255, 20);
-      _color[2] = _matrix.Color(0, 255, 115);
-      _color[3] = _matrix.Color(0, 246, 255);
-      break;
-    default:
-      _color[0] = _matrix.Color(0, 0, 0);
-  }
-}
-
-/**
  * Initialyze and reset everything to prepare a new game
  */
 void startNewGame() {
@@ -172,6 +94,9 @@ void gameOver() {
   startNewGame();
 }
 
+/**
+ * Manage the moving of the frames according a position and a direction given by the next row and frame
+ */
 void moveGridTo(int startPos, int nextRow, int nextFrame) {
   int pos, i, j;
   bool isGridMoved = false;
@@ -232,120 +157,4 @@ bool moveFrame(int pos, int nextFrame, int limit) {
   }
 
   return (hasMoved);
-}
-
-
-/**
- * Insert a new frame in the grid
- */
-void insertNumber() {
-  long index = random(16);
-  long number = random(100);
-  
-  // Search a free grid frame. TODO: find a better way to do this
-  while (_grid[index] != 0) {
-    index = random(16);
-  }
-  
-  // Determine the weight of the new frame. 66% chances to have a 2
-  if (number < 66)
-    _grid[index] = 2;
-  else
-    _grid[index] = 4;
-}
-
-
-/**
- *  Return the gyroscopic direction (if any), one of Direction enum
- */
-Direction checkGyroMove() {
-  int       vertical, horizontal, diffX, diffY;
-  Direction currentDirection  = NoDirection;
-
-  // Move detection
-  horizontal = analogRead(GYRO_X);
-  vertical = analogRead(GYRO_Y);
-
-  // Calc the gap between the initial neutral position and the current inclination
-  diffX = GYRO_CALIBRATION_X - horizontal;
-  diffY = GYRO_CALIBRATION_Y - vertical;
-
-  // Check if the joystick is bent to a direction
-  if (_isDefaultPosition) {
-    if ( (abs(diffX) > GYRO_DETECTION_GAP) || (abs(diffY) > GYRO_DETECTION_GAP) ) {
-      _isDefaultPosition = false;
-      if ( (abs(diffY) > GYRO_DETECTION_GAP) && (diffY < 0) )
-        currentDirection = Down;
-      else if ( (abs(diffY) > GYRO_DETECTION_GAP) && (diffY > 0) )
-        currentDirection = Up;
-      else if (diffX < 0)
-        currentDirection = Left;
-      else
-        currentDirection = Right;
-    }
-  }
-  // Else check if the joystick is back to its default position
-  else if (!_isDefaultPosition) {
-    horizontal = abs(horizontal - GYRO_CALIBRATION_X);
-    vertical = abs(vertical - GYRO_CALIBRATION_Y);
-
-    if ((vertical < MARGIN_DETECTION) && (horizontal < MARGIN_DETECTION)) {
-      _isDefaultPosition = true;
-    }
-  }
-
-  return (currentDirection);
-}
-
-/**
- * If no more move is possible, return true. 
- */
-bool checkGameOver() {
-  int   i = 0;
-
-  // Check for each frame if a merge is possible (or if the frame is empty...)
-  while (i < 16) {
-    // If there still have empty frames exit
-    if (_grid[i] == 0)
-      break;
-
-    if ((i % 4) != 0) { // Check if we can combine with the left frame
-      if (_grid[i] == _grid[i - 1])
-        break;
-    }
-    if (((i + 1) % 4) != 0) { // Check if we can combine with the right frame
-      if (_grid[i] == _grid[i + 1])
-        break;
-    }
-    if (i > 3) { // Check if we can combine with the upper frame
-      if (_grid[i] == _grid[i - 4])
-        break;
-    }
-    if (i < 12) { // Check if we can combine with the bottom frame
-      if (_grid[i] == _grid[i + 4])
-        break;
-    }
-
-    i++;
-  }
-
-  // If we ran out of frame without any available merge, game over !
-  if (i >= 16)
-    return (true);
-  return (false);
-}
-
-/**
- * Play a melody given in parameters
- */
-void playMelody(const int* melody, const int* duration, const int melodySize) {
-  int note, noteDuration, pauseBetweenNotes;
-
-  for (note = 0; note < melodySize; note++) {
-    noteDuration = 1000 / duration[note];
-    pauseBetweenNotes = noteDuration * 1.30;
-    tone(PIEZZO_PIN, melody[note], noteDuration);
-    delay(pauseBetweenNotes);
-    noTone(PIEZZO_PIN);
-  }
 }
