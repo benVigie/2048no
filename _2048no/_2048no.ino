@@ -153,6 +153,8 @@ bool moveFrame(int pos, int nextFrame, int limit) {
       break;
     }
 
+    printGrid();
+    delay(20);
     pos += nextFrame;
   }
 
